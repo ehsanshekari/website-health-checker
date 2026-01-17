@@ -1,7 +1,14 @@
+// Set environment variable before importing handler
+process.env.WEBSITES_TABLE_NAME = 'test-websites-table';
+
 import { handler } from './checker';
 import type { Context } from 'aws-lambda';
+import { mockClient } from 'aws-sdk-client-mock';
+import { DynamoDBDocumentClient, ScanCommand } from '@aws-sdk/lib-dynamodb';
 
 global.fetch = jest.fn();
+
+const ddbMock = mockClient(DynamoDBDocumentClient);
 
 describe('website-health-checker lambda', () => {
   const mockContext: Context = {
@@ -21,6 +28,23 @@ describe('website-health-checker lambda', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    ddbMock.reset();
+    
+    // Mock DynamoDB response with test websites
+    ddbMock.on(ScanCommand).resolves({
+      Items: [
+        {
+          id: '1',
+          url: 'https://www.google.com',
+          contentRequirement: 'google',
+        },
+        {
+          id: '2',
+          url: 'https://www.yahoo.com',
+          contentRequirement: 'yahoo',
+        },
+      ],
+    });
   });
 
   it('successfully checks websites with valid content', async () => {

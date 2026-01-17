@@ -38,11 +38,10 @@ export async function handler(): Promise<APIGatewayProxyResultV2> {
     const end = Math.floor(Date.now() / 1000);
     const start = end - MAX_LOOKBACK_MINUTES * 60;
 
-    // Query raw events: use structured log fields (url is already a field)
+    // Query raw events: use structured log fields
     const queryString = [
-      'filter ispresent(responseTimeMs) and ispresent(url)',
-      'parse message /^(?<statusLabel>[^:]+)/',
-      'fields @timestamp, url, statusLabel, responseTimeMs',
+      'filter ispresent(responseTimeMs)',
+      'fields @timestamp, message, responseTimeMs',
       'sort @timestamp desc',
       'limit 100',
     ].join(' | ');
@@ -77,10 +76,16 @@ export async function handler(): Promise<APIGatewayProxyResultV2> {
           for (const f of row ?? []) {
             if (f.field && f.value != null) obj[f.field] = f.value;
           }
-          const url = obj.url;
+          // Parse message: "Status: URL"
+          const message = obj.message ?? '';
+          const match = message.match(/^(.+?):\s*(.+)$/);
+          if (!match) continue;
+          
+          const statusLabel = match[1];
+          const url = match[2];
+          
           if (!url || seen.has(url)) continue;
           seen.add(url);
-          const statusLabel = obj.statusLabel ?? '';
           const ts = obj['@timestamp'];
           const responseTimeMs = obj.responseTimeMs
             ? Number(obj.responseTimeMs)

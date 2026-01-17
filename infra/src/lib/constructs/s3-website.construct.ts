@@ -1,13 +1,10 @@
 import { Construct } from 'constructs';
 import * as s3 from 'aws-cdk-lib/aws-s3';
-import * as s3deploy from 'aws-cdk-lib/aws-s3-deployment';
 import { RemovalPolicy } from 'aws-cdk-lib';
 
 export interface S3WebsiteConstructProps {
   /** Name for the S3 bucket (must be globally unique) */
   bucketName?: string;
-  /** Path to the webapp build output directory */
-  websiteDistPath: string;
 }
 
 /**
@@ -20,7 +17,7 @@ export class S3WebsiteConstruct extends Construct {
   constructor(scope: Construct, id: string, props: S3WebsiteConstructProps) {
     super(scope, id);
 
-    const { bucketName, websiteDistPath } = props;
+    const { bucketName } = props;
 
     // Create S3 bucket for static website hosting
     this.bucket = new s3.Bucket(this, 'WebsiteBucket', {
@@ -39,11 +36,5 @@ export class S3WebsiteConstruct extends Construct {
     });
 
     this.websiteUrl = this.bucket.bucketWebsiteUrl;
-
-    // Deploy website content to S3
-    new s3deploy.BucketDeployment(this, 'WebsiteDeployment', {
-      sources: [s3deploy.Source.asset(websiteDistPath)],
-      destinationBucket: this.bucket,
-    });
   }
 }

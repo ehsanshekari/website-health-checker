@@ -73,32 +73,6 @@ jobs:
       - name: Build infrastructure
         run: pnpm --filter website-monitoring-infra run build
 
-      - name: Get API URL from stack outputs
-        id: get-api-url
-        run: |
-          API_URL=$(aws cloudformation describe-stacks \
-            --stack-name WebsiteMonitoringStack \
-            --region ${{ vars.AWS_REGION }} \
-            --query "Stacks[0].Outputs[?OutputKey=='StatusEndpointUrl'].OutputValue" \
-            --output text 2>/dev/null || echo "")
-          if [ -z "$API_URL" ]; then
-            echo "API URL not found, will be available after first deployment"
-            echo "api_url=" >> $GITHUB_OUTPUT
-          else
-            echo "API URL: $API_URL"
-            echo "api_url=$API_URL" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Build webapp
-        run: |
-          if [ -n "${{ steps.get-api-url.outputs.api_url }}" ]; then
-            echo "Building webapp with API URL: ${{ steps.get-api-url.outputs.api_url }}"
-            VITE_STATUS_API_URL="${{ steps.get-api-url.outputs.api_url }}" pnpm --filter website-monitoring-webapp run build
-          else
-            echo "Building webapp without API URL (first deployment)"
-            pnpm --filter website-monitoring-webapp run build
-          fi
-
       - name: CDK Diff
         run: pnpm --filter website-monitoring-infra run cdk diff
         continue-on-error: true
@@ -106,24 +80,41 @@ jobs:
       - name: CDK Deploy
         run: pnpm --filter website-monitoring-infra run cdk deploy --require-approval never
 
-      - name: Get deployed API URL
-        id: deployed-api-url
+      - name: Get deployed API URL and bucket name
+        id: stack-outputs
         run: |
           API_URL=$(aws cloudformation describe-stacks \
             --stack-name WebsiteMonitoringStack \
             --region ${{ vars.AWS_REGION }} \
             --query "Stacks[0].Outputs[?OutputKey=='StatusEndpointUrl'].OutputValue" \
             --output text)
-          echo "Deployed API URL: $API_URL"
+          BUCKET_NAME=$(aws cloudformation describe-stacks \
+            --stack-name WebsiteMonitoringStack \
+            --region ${{ vars.AWS_REGION }} \
+            --query "Stacks[0].Outputs[?OutputKey=='WebsiteBucketName'].OutputValue" \
+            --output text)
+          echo "API URL: $API_URL"
+          echo "Bucket Name: $BUCKET_NAME"
           echo "api_url=$API_URL" >> $GITHUB_OUTPUT
+          echo "bucket_name=$BUCKET_NAME" >> $GITHUB_OUTPUT
 
-      - name: Rebuild webapp with deployed API URL
-        if: steps.get-api-url.outputs.api_url == ''
+      - name: Build webapp with API URL
         run: |
-          echo "Rebuilding webapp with deployed API URL: ${{ steps.deployed-api-url.outputs.api_url }}"
-          VITE_STATUS_API_URL="${{ steps.deployed-api-url.outputs.api_url }}" pnpm --filter website-monitoring-webapp run build
+          echo "Building webapp with API URL: ${{ steps.stack-outputs.outputs.api_url }}"
+          VITE_STATUS_API_URL="${{ steps.stack-outputs.outputs.api_url }}" pnpm --filter website-monitoring-webapp run build
+
+      - name: Deploy webapp to S3
+        run: |
+          echo "Deploying webapp to S3 bucket: ${{ steps.stack-outputs.outputs.bucket_name }}"
+          aws s3 sync ./webapp/dist s3://${{ steps.stack-outputs.outputs.bucket_name }}/ --delete --region ${{ vars.AWS_REGION }}
 
       - name: Output deployment info
         run: |
           echo "Deployment completed successfully"
-          pnpm --filter website-monitoring-infra run cdk ls
+          WEBSITE_URL=$(aws cloudformation describe-stacks \
+            --stack-name WebsiteMonitoringStack \
+            --region ${{ vars.AWS_REGION }} \
+            --query "Stacks[0].Outputs[?OutputKey=='WebsiteUrl'].OutputValue" \
+            --output text)
+          echo "Website URL: $WEBSITE_URL"
+          echo "API URL: ${{ steps.stack-outputs.outputs.api_url }}"

@@ -8,7 +8,6 @@ import { S3WebsiteConstruct } from '../constructs/s3-website.construct';
 import { Rule, Schedule } from 'aws-cdk-lib/aws-events';
 import { LambdaFunction } from 'aws-cdk-lib/aws-events-targets';
 import { Duration } from 'aws-cdk-lib';
-import * as path from 'path';
 
 export class WebsiteMonitoringStack extends cdk.Stack {
 
@@ -80,11 +79,7 @@ export class WebsiteMonitoringStack extends cdk.Stack {
     });
 
     // Create S3 static website hosting for the webapp
-    const webappDistPath = path.join(__dirname, '../../../../webapp/dist');
-    
-    const website = new S3WebsiteConstruct(this, 'WebsiteHosting', {
-      websiteDistPath: webappDistPath,
-    });
+    const website = new S3WebsiteConstruct(this, 'WebsiteHosting', {});
 
     // Output the website URL
     new cdk.CfnOutput(this, 'WebsiteUrl', {

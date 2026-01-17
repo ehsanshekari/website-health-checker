@@ -10,5 +10,5 @@ export interface ScheduleConfig {
  */
 export const scheduleConfig: ScheduleConfig = {
   // Check websites every 50 minutes (3000 seconds)
-  intervalSeconds: 3000,
+  intervalSeconds: 30,
 };

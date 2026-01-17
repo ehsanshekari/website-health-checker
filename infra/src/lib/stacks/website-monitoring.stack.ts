@@ -2,7 +2,7 @@ import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { WebsiteCheckerLambda } from '../constructs/website-checker-lambda.construct';
 import { EventBridgeSchedule } from '../constructs/eventbridge-schedule.construct';
-import { scheduleConfig } from '../config/schedule.config';
+import { scheduleConfig } from '../../config/schedule.config';
 
 export class WebsiteMonitoringStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {

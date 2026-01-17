@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { StatusItem, StatusResponse } from './types';
 
-const API_URL = import.meta.env.VITE_STATUS_API_URL as string | undefined;
+// const API_URL = import.meta.env.VITE_STATUS_API_URL as string | undefined;
+
+const API_URL = 'https://1xst1kto5k.execute-api.eu-north-1.amazonaws.com/prod/api/status';
 
 function formatDate(iso?: string) {
   if (!iso) return '-';
@@ -38,7 +40,7 @@ export default function App() {
       const json = (await res.json()) as StatusResponse;
       setData(json.items ?? []);
     } catch (e: unknown) {
-      setError(e?.message ?? 'Failed to load');
+      setError(e instanceof Error ? e.message : 'Failed to load');
     } finally {
       setLoading(false);
     }

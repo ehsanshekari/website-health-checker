@@ -3,12 +3,12 @@ name: Deploy to AWS
 on:
   push:
     branches:
-      - main
+      - master
   workflow_dispatch:
 
 env:
-  AWS_REGION: us-east-1
-  NODE_VERSION: '18'
+  NODE_VERSION: '22'
+  STACK_NAME: 'WebsiteMonitoringStack'
 
 jobs:
   deploy:
@@ -25,7 +25,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 8
+          version: 10
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -43,19 +43,76 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          aws-region: ${{ env.AWS_REGION }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Log configured AWS region
+        run: |
+          echo "Workflow AWS_REGION=${{ vars.AWS_REGION }}"
+          echo "Environment AWS_REGION=$AWS_REGION"
+
+      - name: Install AWS CLI if missing
+        run: |
+          if ! command -v aws >/dev/null 2>&1; then
+            echo "AWS CLI not found. Installing..."
+            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+            unzip -q awscliv2.zip
+            sudo ./aws/install
+          else
+            echo "AWS CLI already installed."
+          fi
+          aws --version
+
+      - name: Ensure CDK bootstrapped
+        run: |
+          if ! aws cloudformation describe-stacks --stack-name CDKToolkit --region ${{ vars.AWS_REGION }} >/dev/null 2>&1; then
+            echo "CDKToolkit not found in ${{ vars.AWS_REGION }}. Bootstrapping..."
+            pnpm --filter website-monitoring-infra run cdk bootstrap
+          else
+            echo "CDKToolkit exists in ${{ vars.AWS_REGION }}. Skipping bootstrap."
+          fi
 
       - name: Build infrastructure
         run: pnpm --filter website-monitoring-infra run build
 
       - name: CDK Diff
-        run: pnpm --filter website-monitoring-infra run cdk diff
-        continue-on-error: true
+        run: |
+          if aws cloudformation describe-stacks --stack-name ${{ env.STACK_NAME }} --region ${{ vars.AWS_REGION }} >/dev/null 2>&1; then
+            echo "Running diff against existing stack..."
+            pnpm --filter website-monitoring-infra run cdk diff
+          else
+            echo "No existing stack found. Skipping diff (first deployment)."
+          fi
 
       - name: CDK Deploy
-        run: pnpm --filter website-monitoring-infra run cdk deploy --require-approval never
+        run: pnpm --filter website-monitoring-infra run cdk deploy --require-approval never --outputs-file ../cdk-outputs.json
+
+      - name: Extract stack outputs from CDK
+        id: stack-outputs
+        run: |
+          API_URL=$(jq -r '."${{ env.STACK_NAME }}".StatusEndpointUrl' cdk-outputs.json)
+          BUCKET_NAME=$(jq -r '."${{ env.STACK_NAME }}".WebsiteBucketName' cdk-outputs.json)
+          WEBSITE_URL=$(jq -r '."${{ env.STACK_NAME }}".WebsiteUrl' cdk-outputs.json)
+          
+          echo "API URL: $API_URL"
+          echo "Bucket Name: $BUCKET_NAME"
+          echo "Website URL: $WEBSITE_URL"
+          
+          echo "api_url=$API_URL" >> $GITHUB_OUTPUT
+          echo "bucket_name=$BUCKET_NAME" >> $GITHUB_OUTPUT
+          echo "website_url=$WEBSITE_URL" >> $GITHUB_OUTPUT
+
+      - name: Build webapp with API URL
+        run: |
+          echo "Building webapp with API URL: ${{ steps.stack-outputs.outputs.api_url }}"
+          VITE_STATUS_API_URL="${{ steps.stack-outputs.outputs.api_url }}" pnpm --filter website-monitoring-webapp run build
+
+      - name: Deploy webapp to S3
+        run: |
+          echo "Deploying webapp to S3 bucket: ${{ steps.stack-outputs.outputs.bucket_name }}"
+          aws s3 sync ./webapp/dist s3://${{ steps.stack-outputs.outputs.bucket_name }}/ --delete --region ${{ vars.AWS_REGION }}
 
       - name: Output deployment info
         run: |
           echo "Deployment completed successfully"
-          pnpm --filter website-monitoring-infra run cdk ls
+          echo "Website URL: ${{ steps.stack-outputs.outputs.website_url }}"
+          echo "API URL: ${{ steps.stack-outputs.outputs.api_url }}"

@@ -1,5 +1,5 @@
 {
-  "name": "website",
+  "name": "website-monitoring",
   "version": "0.1.0",
   "description": "This repo contains a sample project for website monitoring using AWS CDK and Lambda.",
   "engines": {

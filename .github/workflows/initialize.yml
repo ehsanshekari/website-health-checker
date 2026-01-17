@@ -1,0 +1,59 @@
+# Can be manual or a separate CDK stack
+name: Initialize Configuration
+
+on:
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: '22'
+
+jobs:
+  initialize:
+    name: Initialize SSM Parameters
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Clean up old parameter (if exists)
+        run: |
+          # Delete the incorrectly named parameter if it exists
+          if aws ssm get-parameter --name "/website-monitoring/check-interval-seconds" --region ${{ vars.AWS_REGION }} >/dev/null 2>&1; then
+            echo "Found old parameter '/website-monitoring/check-interval-seconds'. Deleting..."
+            aws ssm delete-parameter --name "/website-monitoring/check-interval-seconds" --region ${{ vars.AWS_REGION }}
+            echo "Old parameter deleted successfully"
+          else
+            echo "No old parameter found. Skipping cleanup."
+          fi
+
+      - name: Create SSM Parameter for Check Interval
+        run: |
+          # Delete existing parameter to recreate with correct value
+          if aws ssm get-parameter --name "/website-monitoring/check-interval-minutes" --region ${{ vars.AWS_REGION }} >/dev/null 2>&1; then
+            echo "Parameter already exists. Deleting to recreate..."
+            aws ssm delete-parameter --name "/website-monitoring/check-interval-minutes" --region ${{ vars.AWS_REGION }}
+          fi
+          
+          echo "Creating SSM parameter with default value of 1 minute..."
+          aws ssm put-parameter \
+            --name "/website-monitoring/check-interval-minutes" \
+            --value "1" \
+            --type "String" \
+            --description "Website check interval in minutes" \
+            --region ${{ vars.AWS_REGION }}
+          echo "Parameter created successfully with value: 1 minute"
+
+      - name: Summary
+        run: |
+          echo "## Configuration Initialized" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "SSM Parameter: \`/website-monitoring/check-interval-minutes\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "You can now deploy the CDK stack." >> $GITHUB_STEP_SUMMARY

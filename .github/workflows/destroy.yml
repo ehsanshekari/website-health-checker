@@ -1,0 +1,68 @@
+name: Destroy AWS Stack
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "destroy" to confirm stack deletion'
+        required: true
+        type: string
+
+env:
+  NODE_VERSION: '22'
+
+jobs:
+  destroy:
+    name: Destroy CDK Stack
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Verify confirmation
+        run: |
+          if [ "${{ github.event.inputs.confirm }}" != "destroy" ]; then
+            echo "Confirmation failed. You must type 'destroy' to proceed."
+            exit 1
+          fi
+          echo "Confirmation received. Proceeding with stack destruction..."
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Build infrastructure
+        run: pnpm --filter website-monitoring-infra run build
+
+      - name: Destroy CDK Stack
+        run: |
+          echo "Destroying WebsiteMonitoringStack..."
+          pnpm --filter website-monitoring-infra run cdk destroy --force
+
+      - name: Summary
+        run: |
+          echo "## Stack Destruction Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "The WebsiteMonitoringStack has been destroyed." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Note:** Resources with RETAIN policy (DynamoDB table, SSM parameters) were preserved." >> $GITHUB_STEP_SUMMARY

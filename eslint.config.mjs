@@ -10,6 +10,17 @@ export default [
     }
   },
   {
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_'
+        }
+      ]
+    }
+  },
+  {
     ignores: [
       '**/node_modules/**',
       '**/dist/**',
@@ -37,6 +48,20 @@ export default [
         afterEach: 'readonly',
         jest: 'readonly'
       }
+    }
+  },
+  {
+    files: [
+      '**/jest.config.{js,cjs}',
+      '**/*.config.{js,cjs}',
+      '**/commitlint.config.cjs',
+      '**/*.cjs'
+    ],
+    languageOptions: {
+      sourceType: 'commonjs'
+    },
+    rules: {
+      '@typescript-eslint/no-require-imports': 'off'
     }
   },
   // Disable stylistic rules to align with Prettier, equivalent to extends: ['prettier']

@@ -13,7 +13,7 @@ export class WebsiteMonitoringStack extends cdk.Stack {
       timeout: cdk.Duration.seconds(30),
       memorySize: 256,
       environment: {
-        // Add any environment variables here
+        POWERTOOLS_SERVICE_NAME: 'website-health-checker',
       },
     });
 

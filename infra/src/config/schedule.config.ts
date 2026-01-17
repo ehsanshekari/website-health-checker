@@ -3,5 +3,5 @@ export interface ScheduleConfig {
 }
 
 export const scheduleConfig: ScheduleConfig = {
-  intervalSeconds: 60,
+  intervalSeconds: 60, // 1 Minute
 };

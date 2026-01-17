@@ -20,7 +20,7 @@ export class WebsiteMonitoringStack extends cdk.Stack {
       timeout: Duration.seconds(30),
       memorySize: 256,
       environment: {
-        POWER_TOOLS_SERVICE_NAME: 'WebsiteMonitoring',
+        POWERTOOLS_SERVICE_NAME: 'WebsiteMonitoring',
       }
     });
 

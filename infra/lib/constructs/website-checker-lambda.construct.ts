@@ -17,9 +17,9 @@ export class WebsiteCheckerLambda extends Construct {
     super(scope, id);
 
     this.function = new NodejsFunction(this, 'Function', {
-      entry: path.join(__dirname, '../../../service/src/handlers/website-checker.ts'),
+      entry: path.join(__dirname, '../../../service/src/handlers/website-health-checker.ts'),
       handler: 'handler',
-      runtime: Runtime.NODEJS_18_X,
+      runtime: Runtime.NODEJS_22_X,
       timeout: props?.timeout ?? Duration.seconds(30),
       memorySize: props?.memorySize ?? 256,
       bundling: {

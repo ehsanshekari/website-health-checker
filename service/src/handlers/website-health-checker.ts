@@ -7,6 +7,8 @@ const logger = new Logger();
 class Lambda implements LambdaInterface {
   @logger.injectLambdaContext()
   async handler(_event: unknown, _context: Context) {
+    void _event;
+    void _context;
     logger.info('Simple powertools logger lambda invoked');
   }
 }

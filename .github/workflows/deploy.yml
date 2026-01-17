@@ -3,12 +3,11 @@ name: Deploy to AWS
 on:
   push:
     branches:
-      - main
+      - master
   workflow_dispatch:
 
 env:
-  AWS_REGION: us-east-1
-  NODE_VERSION: '18'
+  NODE_VERSION: '22'
 
 jobs:
   deploy:
@@ -25,7 +24,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 8
+          version: 10
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -43,7 +42,33 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          aws-region: ${{ env.AWS_REGION }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Log configured AWS region
+        run: |
+          echo "Workflow AWS_REGION=${{ vars.AWS_REGION }}"
+          echo "Environment AWS_REGION=$AWS_REGION"
+
+      - name: Install AWS CLI if missing
+        run: |
+          if ! command -v aws >/dev/null 2>&1; then
+            echo "AWS CLI not found. Installing..."
+            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+            unzip -q awscliv2.zip
+            sudo ./aws/install
+          else
+            echo "AWS CLI already installed."
+          fi
+          aws --version
+
+      - name: Ensure CDK bootstrapped
+        run: |
+          if ! aws cloudformation describe-stacks --stack-name CDKToolkit --region ${{ vars.AWS_REGION }} >/dev/null 2>&1; then
+            echo "CDKToolkit not found in ${{ vars.AWS_REGION }}. Bootstrapping..."
+            pnpm --filter website-monitoring-infra run cdk bootstrap
+          else
+            echo "CDKToolkit exists in ${{ vars.AWS_REGION }}. Skipping bootstrap."
+          fi
 
       - name: Build infrastructure
         run: pnpm --filter website-monitoring-infra run build

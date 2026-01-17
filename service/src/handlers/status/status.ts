@@ -30,6 +30,9 @@ export async function handler(): Promise<APIGatewayProxyResultV2> {
     logger.error('LOG_GROUP_NAME env var is required');
     return {
       statusCode: 500,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+      },
       body: JSON.stringify({ error: 'Server not configured' }),
     };
   }
@@ -102,6 +105,8 @@ export async function handler(): Promise<APIGatewayProxyResultV2> {
           statusCode: 200,
           headers: {
             'content-type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Headers': 'Content-Type',
           },
           body: JSON.stringify({ generatedAt: new Date().toISOString(), items }),
         };
@@ -117,6 +122,9 @@ export async function handler(): Promise<APIGatewayProxyResultV2> {
     logger.error('Failed to get latest status', { error: String(err) });
     return {
       statusCode: 500,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+      },
       body: JSON.stringify({ error: 'Failed to fetch status' }),
     };
   }

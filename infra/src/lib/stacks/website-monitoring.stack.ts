@@ -49,6 +49,8 @@ export class WebsiteMonitoringStack extends cdk.Stack {
       path: '/api/status',
       method: 'GET',
       handlerPath: 'status/status.ts',
+      functionName: 'getStatus',
+      logGroupName: '/aws/lambda/getStatus',
       environment: {
         LOG_GROUP_NAME: websiteChecker.function.logGroup.logGroupName,
         MAX_LOOKBACK_MINUTES: '60',

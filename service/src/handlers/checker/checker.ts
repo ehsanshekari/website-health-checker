@@ -1,7 +1,7 @@
 import type { LambdaInterface } from '@aws-lambda-powertools/commons/types';
 import { Logger } from '@aws-lambda-powertools/logger';
 import type { Context } from 'aws-lambda';
-import config from './website-health-checker.config.json';
+import config from './checker.config.json';
 
 const logger = new Logger();
 

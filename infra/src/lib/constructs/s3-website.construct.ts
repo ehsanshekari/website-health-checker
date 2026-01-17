@@ -28,7 +28,12 @@ export class S3WebsiteConstruct extends Construct {
       websiteIndexDocument: 'index.html',
       websiteErrorDocument: 'index.html', // SPA routing support
       publicReadAccess: true,
-      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ACLS,
+      blockPublicAccess: new s3.BlockPublicAccess({
+        blockPublicAcls: false,
+        blockPublicPolicy: false,
+        ignorePublicAcls: false,
+        restrictPublicBuckets: false,
+      }),
       removalPolicy: RemovalPolicy.DESTROY,
       autoDeleteObjects: true,
     });

@@ -28,15 +28,6 @@ pnpm-debug.log*
 **/coverage/
 **/.nyc_output/
 
-# Legacy compiled artifacts from earlier layout
-service/entrypoints/*.js
-service/entrypoints/*.d.ts
-
-# Compiled TypeScript files in infra
-infra/**/*.js
-infra/**/*.d.ts
-!infra/jest.config.js
-
 # AWS CDK artifacts (infra)
 infra/cdk.out/
 infra/.cdk.staging/

@@ -50,6 +50,20 @@ export default [
       }
     }
   },
+  {
+    files: [
+      '**/jest.config.{js,cjs}',
+      '**/*.config.{js,cjs}',
+      '**/commitlint.config.cjs',
+      '**/*.cjs'
+    ],
+    languageOptions: {
+      sourceType: 'commonjs'
+    },
+    rules: {
+      '@typescript-eslint/no-require-imports': 'off'
+    }
+  },
   // Disable stylistic rules to align with Prettier, equivalent to extends: ['prettier']
   eslintConfigPrettier
 ];

@@ -1,6 +1,8 @@
 import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { WebsiteCheckerLambda } from '../constructs/website-checker-lambda.construct';
+import { EventBridgeSchedule } from '../constructs/eventbridge-schedule.construct';
+import { scheduleConfig } from '../config/schedule.config';
 
 export class WebsiteMonitoringStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -15,6 +17,14 @@ export class WebsiteMonitoringStack extends cdk.Stack {
       },
     });
 
+    // Create EventBridge schedule to trigger the Lambda
+    const schedule = new EventBridgeSchedule(this, 'WebsiteCheckerSchedule', {
+      targetFunction: websiteChecker.function,
+      intervalSeconds: scheduleConfig.intervalSeconds,
+      description: 'Triggers website health checker Lambda',
+      ruleName: 'WebsiteHealthCheckerSchedule',
+    });
+
     // Output the Lambda function name
     new cdk.CfnOutput(this, 'WebsiteCheckerFunctionName', {
       value: websiteChecker.function.functionName,
@@ -25,6 +35,18 @@ export class WebsiteMonitoringStack extends cdk.Stack {
     new cdk.CfnOutput(this, 'WebsiteCheckerFunctionArn', {
       value: websiteChecker.function.functionArn,
       description: 'Website Checker Lambda Function ARN',
+    });
+
+    // Output the EventBridge rule ARN
+    new cdk.CfnOutput(this, 'ScheduleRuleArn', {
+      value: schedule.rule.ruleArn,
+      description: 'EventBridge Schedule Rule ARN',
+    });
+
+    // Output the schedule interval
+    new cdk.CfnOutput(this, 'ScheduleInterval', {
+      value: `${scheduleConfig.intervalSeconds} seconds`,
+      description: 'Schedule execution interval',
     });
   }
 }

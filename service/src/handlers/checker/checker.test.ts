@@ -1,4 +1,4 @@
-import { handler } from './website-health-checker';
+import { handler } from './checker';
 import type { Context } from 'aws-lambda';
 
 global.fetch = jest.fn();

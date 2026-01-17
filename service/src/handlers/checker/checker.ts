@@ -1,9 +1,14 @@
 import type { LambdaInterface } from '@aws-lambda-powertools/commons/types';
 import { Logger } from '@aws-lambda-powertools/logger';
 import type { Context } from 'aws-lambda';
-import config from './checker.config.json';
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
+import { DynamoDBDocumentClient, ScanCommand } from '@aws-sdk/lib-dynamodb';
 
 const logger = new Logger();
+const dynamoClient = new DynamoDBClient({});
+const docClient = DynamoDBDocumentClient.from(dynamoClient);
+
+const WEBSITES_TABLE_NAME = process.env.WEBSITES_TABLE_NAME;
 
 interface WebsiteConfig {
   url: string;
@@ -21,10 +26,29 @@ class Lambda implements LambdaInterface {
   @logger.injectLambdaContext()
   // @typescript-eslint/no-unused-vars
   async handler(_event: unknown, _context: Context) {
-    logger.info('Checking websites', { count: config.websites.length });
+    if (!WEBSITES_TABLE_NAME) {
+      logger.error('WEBSITES_TABLE_NAME env var is required');
+      throw new Error('WEBSITES_TABLE_NAME not configured');
+    }
+
+    // Fetch websites from DynamoDB
+    const response = await docClient.send(
+      new ScanCommand({
+        TableName: WEBSITES_TABLE_NAME,
+      })
+    );
+
+    const websites = (response.Items || []) as WebsiteConfig[];
+    
+    if (websites.length === 0) {
+      logger.info('No websites configured');
+      return { results: [] };
+    }
+
+    logger.info('Checking websites', { count: websites.length });
 
     const results = await Promise.all(
-      config.websites.map((website) => this.checkWebsite(website)),
+      websites.map((website) => this.checkWebsite(website)),
     );
 
     return { results };

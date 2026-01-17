@@ -55,8 +55,12 @@ export class WebsiteMonitoringStack extends cdk.Stack {
       },
     });
 
-    // Grant permissions
+    // Grant permissions for CloudWatch Logs Insights queries
     websiteChecker.function.logGroup.grantRead(statusEndpoint.lambda.function);
+    websiteChecker.function.logGroup.grant(statusEndpoint.lambda.function, 
+      'logs:StartQuery',
+      'logs:GetQueryResults'
+    );
 
     // Output the API URL
     new cdk.CfnOutput(this, 'ApiUrl', {

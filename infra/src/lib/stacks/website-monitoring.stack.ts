@@ -1,52 +1,72 @@
 import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
-import { WebsiteCheckerLambda } from '../constructs/website-checker-lambda.construct';
-import { EventBridgeSchedule } from '../constructs/eventbridge-schedule.construct';
+import { resolve } from 'path';
+import { ApiGatewayConstruct } from '../constructs/api-gateway.construct';
 import { scheduleConfig } from '../../config/schedule.config';
+import { WebsiteCheckerLambda } from '../constructs/website-checker-lambda.construct';
+import { ApiEndpoint } from '../constructs/api-endpoint.construct';
+import { Rule, Schedule } from 'aws-cdk-lib/aws-events';
+import { LambdaFunction } from 'aws-cdk-lib/aws-events-targets';
+import { Duration } from 'aws-cdk-lib';
+
+const _handlerBasePath = resolve(__dirname, '../../../service/src');
 
 export class WebsiteMonitoringStack extends cdk.Stack {
+
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-    // Create the website checker Lambda
+    const _region = this.region;
+    const _accountId = this.account;
+    const stageName = 'prod';
+
+    // Create the website checker lambda
     const websiteChecker = new WebsiteCheckerLambda(this, 'WebsiteChecker', {
-      timeout: cdk.Duration.seconds(30),
+      timeout: Duration.seconds(30),
       memorySize: 256,
+    });
+
+    // Create EventBridge rule to trigger the checker on schedule
+    const checkerRule = new Rule(this, 'WebsiteCheckerSchedule', {
+      description: 'Triggers website health check periodically',
+      schedule: Schedule.rate(Duration.seconds(scheduleConfig.intervalSeconds)),
+    });
+
+    // Add the lambda as a target
+    checkerRule.addTarget(new LambdaFunction(websiteChecker.function));
+
+    // Create API Gateway
+    const apiGateway = new ApiGatewayConstruct(this, 'WebsiteMonitoringApi', {
+      apiName: 'WebsiteMonitoringApi',
+      description: 'Website Monitoring REST API',
+      stageName,
+      enableCors: true,
+    });
+
+    // Create GET /api/status endpoint
+    const statusEndpoint = new ApiEndpoint(this, 'StatusEndpoint', {
+      api: apiGateway.restApi,
+      path: '/api/status',
+      method: 'GET',
+      handlerPath: 'status/status.ts',
       environment: {
-        POWERTOOLS_SERVICE_NAME: 'website-health-checker',
+        LOG_GROUP_NAME: websiteChecker.function.logGroup.logGroupName,
+        MAX_LOOKBACK_MINUTES: '60',
       },
     });
 
-    // Create EventBridge schedule to trigger the Lambda
-    const schedule = new EventBridgeSchedule(this, 'WebsiteCheckerSchedule', {
-      targetFunction: websiteChecker.function,
-      intervalSeconds: scheduleConfig.intervalSeconds,
-      description: 'Triggers website health checker Lambda',
-      ruleName: 'WebsiteHealthCheckerSchedule',
+    // Grant permissions
+    websiteChecker.function.logGroup.grantRead(statusEndpoint.lambda.function);
+
+    // Output the API URL
+    new cdk.CfnOutput(this, 'ApiUrl', {
+      value: apiGateway.restApi.url,
+      description: 'Website Monitoring API URL',
     });
 
-    // Output the Lambda function name
-    new cdk.CfnOutput(this, 'WebsiteCheckerFunctionName', {
-      value: websiteChecker.function.functionName,
-      description: 'Website Checker Lambda Function Name',
-    });
-
-    // Output the Lambda function ARN
-    new cdk.CfnOutput(this, 'WebsiteCheckerFunctionArn', {
-      value: websiteChecker.function.functionArn,
-      description: 'Website Checker Lambda Function ARN',
-    });
-
-    // Output the EventBridge rule ARN
-    new cdk.CfnOutput(this, 'ScheduleRuleArn', {
-      value: schedule.rule.ruleArn,
-      description: 'EventBridge Schedule Rule ARN',
-    });
-
-    // Output the schedule interval
-    new cdk.CfnOutput(this, 'ScheduleInterval', {
-      value: `${scheduleConfig.intervalSeconds} seconds`,
-      description: 'Schedule execution interval',
+    new cdk.CfnOutput(this, 'StatusEndpoint', {
+      value: `${apiGateway.restApi.url}api/status`,
+      description: 'Status endpoint URL',
     });
   }
 }

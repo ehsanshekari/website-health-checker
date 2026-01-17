@@ -17,8 +17,7 @@ export class WebsiteCheckerLambda extends Construct {
     super(scope, id);
 
     this.function = new NodejsFunction(this, 'Function', {
-      // Resolve from the infra working directory to avoid src/dist path issues
-      entry: path.resolve(process.cwd(), '../service/src/handlers/website-health-checker.ts'),
+      entry: path.resolve(process.cwd(), '../service/src/handlers/checker/checker.ts'),
       handler: 'handler',
       runtime: Runtime.NODEJS_22_X,
       timeout: props?.timeout ?? Duration.seconds(30),

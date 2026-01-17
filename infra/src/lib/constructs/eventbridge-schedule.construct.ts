@@ -5,24 +5,9 @@ import type { IFunction } from 'aws-cdk-lib/aws-lambda';
 import { Duration } from 'aws-cdk-lib';
 
 export interface EventBridgeScheduleProps {
-  /**
-   * The Lambda function to trigger
-   */
   readonly targetFunction: IFunction;
-  
-  /**
-   * Interval in seconds between executions
-   */
   readonly intervalSeconds: number;
-  
-  /**
-   * Optional description for the EventBridge rule
-   */
   readonly description?: string;
-  
-  /**
-   * Optional rule name
-   */
   readonly ruleName?: string;
 }
 

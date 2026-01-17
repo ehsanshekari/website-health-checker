@@ -1,5 +1,6 @@
 packages:
   - infra
   - service
+  - webapp
 ignoredBuiltDependencies:
   - esbuild

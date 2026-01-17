@@ -73,12 +73,55 @@ jobs:
       - name: Build infrastructure
         run: pnpm --filter website-monitoring-infra run build
 
+      - name: Get API URL from stack outputs
+        id: get-api-url
+        run: |
+          API_URL=$(aws cloudformation describe-stacks \
+            --stack-name WebsiteMonitoringStack \
+            --region ${{ vars.AWS_REGION }} \
+            --query "Stacks[0].Outputs[?OutputKey=='StatusEndpointUrl'].OutputValue" \
+            --output text 2>/dev/null || echo "")
+          if [ -z "$API_URL" ]; then
+            echo "API URL not found, will be available after first deployment"
+            echo "api_url=" >> $GITHUB_OUTPUT
+          else
+            echo "API URL: $API_URL"
+            echo "api_url=$API_URL" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build webapp
+        run: |
+          if [ -n "${{ steps.get-api-url.outputs.api_url }}" ]; then
+            echo "Building webapp with API URL: ${{ steps.get-api-url.outputs.api_url }}"
+            VITE_STATUS_API_URL="${{ steps.get-api-url.outputs.api_url }}" pnpm --filter website-monitoring-webapp run build
+          else
+            echo "Building webapp without API URL (first deployment)"
+            pnpm --filter website-monitoring-webapp run build
+          fi
+
       - name: CDK Diff
         run: pnpm --filter website-monitoring-infra run cdk diff
         continue-on-error: true
 
       - name: CDK Deploy
         run: pnpm --filter website-monitoring-infra run cdk deploy --require-approval never
+
+      - name: Get deployed API URL
+        id: deployed-api-url
+        run: |
+          API_URL=$(aws cloudformation describe-stacks \
+            --stack-name WebsiteMonitoringStack \
+            --region ${{ vars.AWS_REGION }} \
+            --query "Stacks[0].Outputs[?OutputKey=='StatusEndpointUrl'].OutputValue" \
+            --output text)
+          echo "Deployed API URL: $API_URL"
+          echo "api_url=$API_URL" >> $GITHUB_OUTPUT
+
+      - name: Rebuild webapp with deployed API URL
+        if: steps.get-api-url.outputs.api_url == ''
+        run: |
+          echo "Rebuilding webapp with deployed API URL: ${{ steps.deployed-api-url.outputs.api_url }}"
+          VITE_STATUS_API_URL="${{ steps.deployed-api-url.outputs.api_url }}" pnpm --filter website-monitoring-webapp run build
 
       - name: Output deployment info
         run: |

@@ -4,9 +4,11 @@ import { ApiGatewayConstruct } from '../constructs/api-gateway.construct';
 import { scheduleConfig } from '../../config/schedule.config';
 import { WebsiteCheckerLambda } from '../constructs/website-checker-lambda.construct';
 import { ApiEndpoint } from '../constructs/api-endpoint.construct';
+import { S3WebsiteConstruct } from '../constructs/s3-website.construct';
 import { Rule, Schedule } from 'aws-cdk-lib/aws-events';
 import { LambdaFunction } from 'aws-cdk-lib/aws-events-targets';
 import { Duration } from 'aws-cdk-lib';
+import * as path from 'path';
 
 export class WebsiteMonitoringStack extends cdk.Stack {
 
@@ -66,11 +68,33 @@ export class WebsiteMonitoringStack extends cdk.Stack {
     new cdk.CfnOutput(this, 'ApiUrl', {
       value: apiGateway.restApi.url,
       description: 'Website Monitoring API URL',
+      exportName: 'WebsiteMonitoringApiUrl',
     });
 
+    const statusEndpointUrl = `${apiGateway.restApi.url}api/status`;
+
     new cdk.CfnOutput(this, 'StatusEndpointUrl', {
-      value: `${apiGateway.restApi.url}api/status`,
+      value: statusEndpointUrl,
       description: 'Status endpoint URL',
+      exportName: 'WebsiteMonitoringStatusEndpointUrl',
+    });
+
+    // Create S3 static website hosting for the webapp
+    const webappDistPath = path.join(__dirname, '../../../../webapp/dist');
+    
+    const website = new S3WebsiteConstruct(this, 'WebsiteHosting', {
+      websiteDistPath: webappDistPath,
+    });
+
+    // Output the website URL
+    new cdk.CfnOutput(this, 'WebsiteUrl', {
+      value: website.websiteUrl,
+      description: 'S3 static website URL for the monitoring webapp',
+    });
+
+    new cdk.CfnOutput(this, 'WebsiteBucketName', {
+      value: website.bucket.bucketName,
+      description: 'S3 bucket name for webapp',
     });
   }
 }

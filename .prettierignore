@@ -1,0 +1,32 @@
+# Lockfiles
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+
+# Package stores and caches
+node_modules/
+.pnpm-store/
+.cache/
+.tmp/
+.temp/
+
+# Editor and tooling
+.vscode/
+.idea/
+.turbo/
+.eslintcache
+
+# Build and coverage outputs (infra + service)
+**/dist/
+**/build/
+**/coverage/
+**/.nyc_output/
+
+# AWS CDK artifacts (infra)
+infra/cdk.out/
+infra/.cdk.staging/
+infra/cdk.context.json
+
+# Common serverless/Lambda packaging outputs (service)
+service/.serverless/
+service/.aws-sam/

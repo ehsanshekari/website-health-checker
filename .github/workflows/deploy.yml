@@ -1,0 +1,61 @@
+name: Deploy to AWS
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  AWS_REGION: us-east-1
+  NODE_VERSION: '18'
+
+jobs:
+  deploy:
+    name: Deploy Lambda to AWS
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 8
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run tests
+        run: pnpm run test
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Build infrastructure
+        run: pnpm --filter website-monitoring-infra run build
+
+      - name: CDK Diff
+        run: pnpm --filter website-monitoring-infra run cdk diff
+        continue-on-error: true
+
+      - name: CDK Deploy
+        run: pnpm --filter website-monitoring-infra run cdk deploy --require-approval never
+
+      - name: Output deployment info
+        run: |
+          echo "Deployment completed successfully"
+          pnpm --filter website-monitoring-infra run cdk ls

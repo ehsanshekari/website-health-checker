@@ -1,0 +1,23 @@
+{
+  "name": "website-monitoring-infra",
+  "version": "0.1.0",
+  "bin": {
+    "infra": "bin/infra.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "test": "jest",
+    "test:coverage": "jest --coverage",
+    "cdk": "cdk"
+  },
+  "devDependencies": {
+    "aws-cdk": "2.1101.0",
+    "ts-node": "10.9.2",
+    "esbuild": "^0.19.12"
+  },
+  "dependencies": {
+    "aws-cdk-lib": "2.235.0",
+    "constructs": "10.4.5"
+  }
+}

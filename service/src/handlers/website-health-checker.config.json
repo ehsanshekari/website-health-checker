@@ -1,0 +1,12 @@
+{
+  "websites": [
+    {
+      "url": "https://www.google.com",
+      "contentRequirement": "google"
+    },
+    {
+      "url": "https://www.yahoo.com",
+      "contentRequirement": "yahoo"
+    }
+  ]
+}

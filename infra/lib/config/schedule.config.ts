@@ -9,6 +9,6 @@ export interface ScheduleConfig {
  * Configuration for EventBridge schedule
  */
 export const scheduleConfig: ScheduleConfig = {
-  // Check websites every 5 minutes (300 seconds)
-  intervalSeconds: 30,
+  // Check websites every 50 minutes (3000 seconds)
+  intervalSeconds: 3000,
 };

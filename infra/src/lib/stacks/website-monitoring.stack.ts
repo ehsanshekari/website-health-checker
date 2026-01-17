@@ -64,7 +64,7 @@ export class WebsiteMonitoringStack extends cdk.Stack {
       description: 'Website Monitoring API URL',
     });
 
-    new cdk.CfnOutput(this, 'StatusEndpoint', {
+    new cdk.CfnOutput(this, 'StatusEndpointUrl', {
       value: `${apiGateway.restApi.url}api/status`,
       description: 'Status endpoint URL',
     });

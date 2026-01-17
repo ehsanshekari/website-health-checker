@@ -38,13 +38,13 @@ export async function handler(): Promise<APIGatewayProxyResultV2> {
     const end = Math.floor(Date.now() / 1000);
     const start = end - MAX_LOOKBACK_MINUTES * 60;
 
-    // Query raw events: parse message to get status and url, include responseTimeMs
+    // Query raw events: use structured log fields (url is already a field)
     const queryString = [
-      'filter service = "website-health-checker" and ispresent(responseTimeMs)',
-      'parse message /^(?<statusLabel>[^:]+): (?<url>.+)$/',
+      'filter ispresent(responseTimeMs) and ispresent(url)',
+      'parse message /^(?<statusLabel>[^:]+)/',
       'fields @timestamp, url, statusLabel, responseTimeMs',
       'sort @timestamp desc',
-      'limit 1000',
+      'limit 100',
     ].join(' | ');
 
     const params: StartQueryCommandInput = {

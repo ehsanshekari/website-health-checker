@@ -1,71 +1,32 @@
 import type { APIGatewayProxyResultV2 } from 'aws-lambda';
 import { Logger } from '@aws-lambda-powertools/logger';
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, ScanCommand } from '@aws-sdk/lib-dynamodb';
+
+import { sendSuccess, sendError } from '../../utils/response';
+import { WebsiteStatusRepository } from '../../repositories/website-status.repository';
 
 const logger = new Logger();
-
-// Initialize DynamoDB client once (reused across Lambda invocations)
-const docClient = DynamoDBDocumentClient.from(new DynamoDBClient({}), {
-  marshallOptions: {
-    removeUndefinedValues: true,
-  },
-});
-
 const WEBSITE_STATUS_TABLE_NAME = process.env.WEBSITE_STATUS_TABLE_NAME;
-
-interface StatusItem {
-  url: string;
-  status: string;
-  responseTimeMs?: number;
-  statusCode?: number;
-  lastChecked: string;
-}
+// Note: In this simple example, the service layer is intentionally omitted.
+// The repository is used directly in the handler for straightforward CRUD operations.
+const repository = WEBSITE_STATUS_TABLE_NAME ? new WebsiteStatusRepository(WEBSITE_STATUS_TABLE_NAME) : null;
 
 export async function handler(): Promise<APIGatewayProxyResultV2> {
-  if (!WEBSITE_STATUS_TABLE_NAME) {
+  if (!repository) {
     logger.error('WEBSITE_STATUS_TABLE_NAME env var is required');
-    return {
-      statusCode: 500,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-      },
-      body: JSON.stringify({ error: 'Server not configured' }),
-    };
+    return sendError(500, 'Server not configured');
   }
 
   try {
-    // Scan status table - each URL has exactly one record (latest status)
-    const response = await docClient.send(
-      new ScanCommand({
-        TableName: WEBSITE_STATUS_TABLE_NAME,
-      })
-    );
-
-    const items = (response.Items || []) as StatusItem[];
+    const items = await repository.listAll(logger);
 
     logger.info('Successfully fetched status', { itemCount: items.length });
 
-    return {
-      statusCode: 200,
-      headers: {
-        'content-type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'Content-Type',
-      },
-      body: JSON.stringify({ 
-        generatedAt: new Date().toISOString(), 
-        items 
-      }),
-    };
+    return sendSuccess(200, { 
+      generatedAt: new Date().toISOString(), 
+      items 
+    });
   } catch (err) {
     logger.error('Failed to get latest status', { error: String(err) });
-    return {
-      statusCode: 500,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-      },
-      body: JSON.stringify({ error: 'Failed to fetch status' }),
-    };
+    return sendError(500, 'Failed to fetch status');
   }
 }

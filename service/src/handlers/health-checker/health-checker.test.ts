@@ -1,4 +1,3 @@
-// Set environment variable before importing handler
 process.env.WEBSITES_TABLE_NAME = 'test-websites-table';
 process.env.WEBSITE_STATUS_TABLE_NAME = 'test-website-status-table';
 

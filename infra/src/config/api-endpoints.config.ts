@@ -12,6 +12,17 @@ export interface ApiEndpointConfig {
 
 export const apiEndpointsConfig: ApiEndpointConfig[] = [
   {
+    id: 'LoginEndpoint',
+    path: '/api/auth/login',
+    method: 'POST',
+    handlerPath: 'login/login.ts',
+    functionName: 'login',
+    logGroupName: '/aws/lambda/login',
+    environment: {
+      POWERTOOLS_SERVICE_NAME: config.app.serviceName,
+    },
+  },
+  {
     id: 'StatusEndpoint',
     path: '/api/status',
     method: 'GET',

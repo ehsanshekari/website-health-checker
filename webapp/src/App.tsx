@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { StatusItem, StatusResponse } from './types';
 import Settings from './Settings';
+import Login from './Login';
 
 const API_URL = import.meta.env.VITE_STATUS_API_URL as string | undefined;
 
@@ -23,12 +24,36 @@ function statusColor(status: string) {
 }
 
 export default function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentPage, setCurrentPage] = useState<'dashboard' | 'settings'>('dashboard');
   const [data, setData] = useState<StatusItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const canFetch = useMemo(() => Boolean(API_URL), []);
+
+  // Check for existing auth token on mount
+  useEffect(() => {
+    const token = localStorage.getItem('authToken');
+    if (token) {
+      setIsAuthenticated(true);
+    }
+  }, []);
+
+  function handleLoginSuccess(_token: string) {
+    setIsAuthenticated(true);
+  }
+
+  function handleLogout() {
+    localStorage.removeItem('authToken');
+    setIsAuthenticated(false);
+    setCurrentPage('dashboard');
+  }
+
+  // Show login page if not authenticated
+  if (!isAuthenticated) {
+    return <Login onLoginSuccess={handleLoginSuccess} />;
+  }
 
   async function fetchData() {
     if (!API_URL) return;
@@ -64,6 +89,9 @@ export default function App() {
           <button onClick={() => setCurrentPage('settings')} style={activeNavButtonStyle}>
             Settings
           </button>
+          <button onClick={handleLogout} style={logoutButtonStyle}>
+            Logout
+          </button>
         </nav>
         <Settings />
       </div>
@@ -78,6 +106,9 @@ export default function App() {
         </button>
         <button onClick={() => setCurrentPage('settings')} style={navButtonStyle}>
           Settings
+        </button>
+        <button onClick={handleLogout} style={logoutButtonStyle}>
+          Logout
         </button>
       </nav>
       <div style={{ fontFamily: 'system-ui, Arial, sans-serif', padding: 24 }}>
@@ -153,6 +184,12 @@ const activeNavButtonStyle: React.CSSProperties = {
   ...navButtonStyle,
   color: '#2563eb',
   borderBottom: '2px solid #2563eb',
+};
+
+const logoutButtonStyle: React.CSSProperties = {
+  ...navButtonStyle,
+  marginLeft: 'auto',
+  color: '#dc2626',
 };
 
 const thStyle: React.CSSProperties = {

@@ -2,7 +2,7 @@ export interface StatusItem {
   url: string;
   status: string;
   responseTimeMs?: number;
-  lastCheck: string;
+  lastChecked: string;
 }
 
 export interface StatusResponse {

@@ -25,7 +25,7 @@ export default function Settings() {
 
   async function fetchInterval() {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/admin/interval`);
+      const res = await fetch(`${API_BASE_URL}/api/interval`);
       if (!res.ok) throw new Error('Failed to fetch interval');
       const data = await res.json();
       setIntervalMinutes(data.intervalMinutes);
@@ -37,7 +37,7 @@ export default function Settings() {
 
   async function fetchWebsites() {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/admin/websites`);
+      const res = await fetch(`${API_BASE_URL}/api/websites`);
       if (!res.ok) throw new Error('Failed to fetch websites');
       const data = await res.json();
       setWebsites(data.websites);
@@ -56,7 +56,7 @@ export default function Settings() {
         return;
       }
 
-      const res = await fetch(`${API_BASE_URL}/api/admin/interval`, {
+      const res = await fetch(`${API_BASE_URL}/api/interval`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ intervalMinutes: value }),
@@ -83,7 +83,7 @@ export default function Settings() {
         return;
       }
 
-      const res = await fetch(`${API_BASE_URL}/api/admin/websites`, {
+      const res = await fetch(`${API_BASE_URL}/api/websites`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url: newUrl, contentRequirement: newContent }),
@@ -108,7 +108,7 @@ export default function Settings() {
     setLoading(true);
     setMessage(null);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/admin/websites/${id}`, {
+      const res = await fetch(`${API_BASE_URL}/api/websites/${id}`, {
         method: 'DELETE',
       });
 

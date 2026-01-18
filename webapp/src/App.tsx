@@ -40,21 +40,7 @@ export default function App() {
     }
   }, []);
 
-  function handleLoginSuccess(_token: string) {
-    setIsAuthenticated(true);
-  }
-
-  function handleLogout() {
-    localStorage.removeItem('authToken');
-    setIsAuthenticated(false);
-    setCurrentPage('dashboard');
-  }
-
-  // Show login page if not authenticated
-  if (!isAuthenticated) {
-    return <Login onLoginSuccess={handleLoginSuccess} />;
-  }
-
+  // Declare hooks unconditionally to preserve consistent order across renders
   const fetchData = useCallback(async () => {
     if (!API_URL) return;
     setLoading(true);
@@ -69,15 +55,32 @@ export default function App() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [API_URL]);
 
   useEffect(() => {
+    // Only fetch when authenticated and on dashboard
+    if (!isAuthenticated) return;
     if (currentPage === 'dashboard') {
       fetchData();
-      const id = setInterval(fetchData, 30_000);
+      const id = setInterval(fetchData, 3_600_000); // Changed interval to 1 hour (3600000 ms)
       return () => clearInterval(id);
     }
-  }, [currentPage, fetchData]);
+  }, [isAuthenticated, currentPage, fetchData]);
+
+  function handleLoginSuccess(_token: string) {
+    setIsAuthenticated(true);
+  }
+
+  function handleLogout() {
+    localStorage.removeItem('authToken');
+    setIsAuthenticated(false);
+    setCurrentPage('dashboard');
+  }
+
+  // Show login page if not authenticated
+  if (!isAuthenticated) {
+    return <Login onLoginSuccess={handleLoginSuccess} />;
+  }
 
   if (currentPage === 'settings') {
     return (
@@ -145,7 +148,7 @@ export default function App() {
                     {item.status}
                   </td>
                   <td style={tdStyle}>{item.responseTimeMs ?? '-'}</td>
-                  <td style={tdStyle}>{formatDate(item.lastCheck)}</td>
+                  <td style={tdStyle}>{formatDate(item.lastChecked)}</td>
                 </tr>
               ))}
               {!loading && data.length === 0 && (

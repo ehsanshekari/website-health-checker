@@ -35,7 +35,7 @@ export const apiEndpointsConfig: ApiEndpointConfig[] = [
   },
   {
     id: 'GetIntervalEndpoint',
-    path: '/api/admin/interval',
+    path: '/api/interval',
     method: 'GET',
     handlerPath: 'get-interval/get-interval.ts',
     functionName: 'getInterval',
@@ -46,7 +46,7 @@ export const apiEndpointsConfig: ApiEndpointConfig[] = [
   },
   {
     id: 'UpdateIntervalEndpoint',
-    path: '/api/admin/interval',
+    path: '/api/interval',
     method: 'PUT',
     handlerPath: 'update-interval/update-interval.ts',
     functionName: 'updateInterval',
@@ -57,7 +57,7 @@ export const apiEndpointsConfig: ApiEndpointConfig[] = [
   },
   {
     id: 'ListWebsitesEndpoint',
-    path: '/api/admin/websites',
+    path: '/api/websites',
     method: 'GET',
     handlerPath: 'list-websites/list-websites.ts',
     functionName: 'listWebsites',
@@ -68,7 +68,7 @@ export const apiEndpointsConfig: ApiEndpointConfig[] = [
   },
   {
     id: 'AddWebsiteEndpoint',
-    path: '/api/admin/websites',
+    path: '/api/websites',
     method: 'POST',
     handlerPath: 'add-website/add-website.ts',
     functionName: 'addWebsite',
@@ -79,7 +79,7 @@ export const apiEndpointsConfig: ApiEndpointConfig[] = [
   },
   {
     id: 'DeleteWebsiteEndpoint',
-    path: '/api/admin/websites/{id}',
+    path: '/api/websites/{id}',
     method: 'DELETE',
     handlerPath: 'delete-website/delete-website.ts',
     functionName: 'deleteWebsite',

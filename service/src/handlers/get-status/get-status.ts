@@ -17,7 +17,7 @@ export async function handler(): Promise<APIGatewayProxyResultV2> {
   }
 
   try {
-    const items = await repository.listAll(logger);
+    const items = await repository.listAll();
 
     logger.info('Successfully fetched status', { itemCount: items.length });
 

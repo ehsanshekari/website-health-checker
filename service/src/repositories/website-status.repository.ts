@@ -45,7 +45,7 @@ export class WebsiteStatusRepository {
     );
   }
 
-  async listAll(logger?: { warn: (msg: string, meta?: unknown) => void }): Promise<StatusItem[]> {
+  async listAll(): Promise<StatusItem[]> {
     const response = await this.docClient.send(
       new ScanCommand({
         TableName: this.tableName,
@@ -54,13 +54,8 @@ export class WebsiteStatusRepository {
 
     const items = response.Items || [];
 
-    // Filter and validate items
-    return items.filter((item, index) => {
-      const isValid = isStatusItem(item);
-      if (!isValid && logger) {
-        logger.warn('Invalid status item found', { index, item });
-      }
-      return isValid;
+    return items.filter((item) => {
+      return isStatusItem(item);
     }) as StatusItem[];
   }
 }

@@ -43,8 +43,10 @@ In addition, templates for pull requests, new features, and issues are provided 
 ## AWS Services used
 
 ### EventBridge + Lambda (website health checker)
-EventBridge and Lambda are used to check the status of websites.  
-Among other reasons, one reason I chose this architecture is that I see multiple-region deployment as a requirement for later. With this architecture, it will obviously be cheaper and easier to maintain compared to running EC2 instances.
+EventBridge and Lambda are used to check the status of websites, which requires less maintenance, and logs are sent directly to CloudWatch.
+Also, this task does not need an always-running architecture, and serverless can save costs.
+
+In addition, multi-region deployment, which will be a requirement in the future, will obviously be cheaper, easier to maintain, and require less operational overhead compared to running EC2 instances.
 
 ### CloudWatch
 CloudWatch is used for logs.
@@ -68,8 +70,21 @@ For this project, all the resources are created within a single stack, but throu
 ### What if we want multi-region latency measurements?
 There can be several possible solutions.
 
-First, we deploy a health-checker Lambda and an EventBridge rule in each region.
+First, we need to remember to use HTTPS, and then we need to deploy a health checker Lambda and an EventBridge rule in each region.
 
 One simple approach is to use a central data store in a primary region (for example, DynamoDB), along with a Lambda function behind an API Gateway that acts as a central data collector.
 
 For security, this data collector Lambda should be protected with IAM and signed requests, so only our own Lambdas from other regions can invoke it and send data securely using signed requests.
+
+## Future Improvements
+- The code can be improved in multiple ways, including adding middlewares for validations, custom error classes, custom adapters, a service layer, and so on.
+- Alerts can be sent, for example via email or SMS, when a website is down for a specific number of minutes.
+- More reusable constructs, code reuse, and possibly stacks can be added, along with proper tagging for cost tracking.
+- HTTPS needs to be added; AWS Certificate Manager can be used.
+- If a dashboard needs to be live and provide user access, AWS Cognito can be used.
+- We also need a nice URL using Route 53 DNS.
+- We can store the history of website statuses in a DynamoDB table.
+
+
+
+

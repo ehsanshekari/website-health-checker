@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import type { StatusItem, StatusResponse } from './types';
 import Settings from './Settings';
 import Login from './Login';
@@ -55,7 +55,7 @@ export default function App() {
     return <Login onLoginSuccess={handleLoginSuccess} />;
   }
 
-  async function fetchData() {
+  const fetchData = useCallback(async () => {
     if (!API_URL) return;
     setLoading(true);
     setError(null);
@@ -69,7 +69,7 @@ export default function App() {
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
 
   useEffect(() => {
     if (currentPage === 'dashboard') {
@@ -77,7 +77,7 @@ export default function App() {
       const id = setInterval(fetchData, 30_000);
       return () => clearInterval(id);
     }
-  }, [currentPage]);
+  }, [currentPage, fetchData]);
 
   if (currentPage === 'settings') {
     return (

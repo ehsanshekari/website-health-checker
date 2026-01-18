@@ -5,9 +5,8 @@ import { sendSuccess, sendError } from '../../utils/response';
 const logger = new Logger();
 
 // Hardcoded credentials - NOTE: This is for demo purposes only!
-// In production, use proper authentication with hashed passwords and secure storage.
 const VALID_USERNAME = 'admin';
-const VALID_PASSWORD = 'notscure';
+const VALID_PASSWORD = 'notsecure';
 
 interface LoginRequest {
   username: string;
@@ -23,7 +22,6 @@ export async function handler(event: APIGatewayProxyEventV2): Promise<APIGateway
       return sendError(400, 'Username and password are required');
     }
 
-    // Validate credentials
     if (username === VALID_USERNAME && password === VALID_PASSWORD) {
       logger.info('Successful login', { username });
       
@@ -31,7 +29,6 @@ export async function handler(event: APIGatewayProxyEventV2): Promise<APIGateway
       return sendSuccess(200, { 
         success: true,
         message: 'Login successful',
-        // Simple token for demo - in production use JWT
         token: Buffer.from(`${username}:${Date.now()}`).toString('base64')
       });
     }
